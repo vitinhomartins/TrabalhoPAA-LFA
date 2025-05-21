@@ -7,33 +7,32 @@ using namespace std;
 
 enum class TipoInstrucao {
     FIXO,
-    REPETICAO_N,           // a^n
-    REPETICAO_LIVRE,       // a*
-    REPETICAO_1_OU_MAIS,   // a+
-    ESPELHADO_N            // b^n (último símbolo de uma cadeia controlada, vai verificar com a pilha)
+    REPETICAO_N,           // repetição em N de vários caractéres. 
+    REPETICAO_LIVRE,       // a* (pode ou não existir)
+    REPETICAO_1_OU_MAIS,   // a+ (pelo menos uma unidade)
+    ESPELHADO_N            // b^n (repetição em relação a REPETICAO_N)
 };
 
 struct Instrucao {
     TipoInstrucao tipo;
     char simbolo;
 
-    Instrucao(TipoInstrucao t, char s) : tipo(t), simbolo(s) {} // construtor da classe.
+    Instrucao(TipoInstrucao t, char s) : tipo(t), simbolo(s) {} // "construtor"
 };
-
 
 using Sequencia = std::vector<Instrucao>;
 
 Sequencia parseExpressao(const std::string& entrada) {
     Sequencia instrucoes;
-    size_t i = 0;
+    int i = 0;
 
     while (i < entrada.size()) {
-        char simbolo = entrada[i];
+        char simbolo = entrada[i]; //caracter a ser lido.
 
-        // Avança para ver se há modificadores
+        // começa a verificação da cadeia para identificar suas operações. 
         if (i + 2 < entrada.size() && entrada[i + 1] == '^' && entrada[i + 2] == 'n') {
             instrucoes.emplace_back(TipoInstrucao::REPETICAO_N, simbolo);
-            i += 3; // pula símbolo + ^n
+            i += 3; 
         }
         else if (i + 1 < entrada.size() && entrada[i + 1] == '*') {
             instrucoes.emplace_back(TipoInstrucao::REPETICAO_LIVRE, simbolo);
@@ -49,8 +48,8 @@ Sequencia parseExpressao(const std::string& entrada) {
         }
     }
 
-    // Converte o último REPETICAO_N em ESPELHADO_N (simula comportamento de pilha)
-    for (int j = static_cast<int>(instrucoes.size()) - 1; j >= 0; --j) {
+    // Ele precisa encontrar a última repetição de N, pois, ele precisa desempilhar e não empilhar.
+    for (int j = instrucoes.size() - 1; j >= 0; --j) {
         if (instrucoes[j].tipo == TipoInstrucao::REPETICAO_N) {
             instrucoes[j].tipo = TipoInstrucao::ESPELHADO_N;
             break;
@@ -62,22 +61,22 @@ Sequencia parseExpressao(const std::string& entrada) {
 
 void mostrarInstrucoes(const Sequencia& seq) {
     for (const auto& instr : seq) {
-        std::cout << instr.simbolo;
+        cout << instr.simbolo;
         switch (instr.tipo) {
-            case TipoInstrucao::FIXO: std::cout << " "; break;
-            case TipoInstrucao::REPETICAO_N: std::cout << " ^n"; break;
-            case TipoInstrucao::REPETICAO_LIVRE: std::cout << " *"; break;
-            case TipoInstrucao::REPETICAO_1_OU_MAIS: std::cout << " +"; break;
-            case TipoInstrucao::ESPELHADO_N: std::cout << " ^n"; break;
+            case TipoInstrucao::FIXO: cout << " "; break;
+            case TipoInstrucao::REPETICAO_N: cout << " ^n"; break;
+            case TipoInstrucao::REPETICAO_LIVRE: cout << " *"; break;
+            case TipoInstrucao::REPETICAO_1_OU_MAIS: cout << " +"; break;
+            case TipoInstrucao::ESPELHADO_N: cout << " ^n"; break;
         }
-        std::cout << " | ";
+        cout << " | ";
     }
-    std::cout << '\n';
+    cout << endl;
 }
 
 bool verificarCadeia(const string& cadeia, const Sequencia& instrucoes, bool debugging){
     int pos = 0, estado = 0;
-    std::stack<char> pilha;
+    stack<char> pilha;
     for(const auto& instrucao : instrucoes) {
         if(debugging) {
             cout << "[ estado " << estado << " ]";
@@ -129,7 +128,9 @@ bool verificarCadeia(const string& cadeia, const Sequencia& instrucoes, bool deb
                 pos++;
         }
         cout << endl;
-        cout << "[Proximo estado] ->>>> " << endl;
+        if(debugging) {
+            cout << "[Proximo estado] ->>>> " << endl;
+        }
         estado++;
     }
     if(pos == cadeia.size()) {
@@ -147,21 +148,31 @@ bool verificarCadeia(const string& cadeia, const Sequencia& instrucoes, bool deb
 }
 
 int main() {
-    std::string expressao, cadeia;
+    string expressao, cadeia;
     
-    std::cout << "Digite a expressao (ex: a^n c b+): ";
-    std::getline(std::cin, expressao);
+    cout << "Digite a expressao (ex: a^n c b+): ";
+    getline(cin, expressao);
     
-    std::cout << "Digite a cadeia (ex: aaacbbb): ";
-    std::getline(std::cin, cadeia);
+    cout << "Digite a cadeia (ex: aaacbbb): ";
+    getline(cin, cadeia);
 
     Sequencia instr = parseExpressao(expressao);
 
-    std::cout << "\nInstruções interpretadas:\n";
+    cout << "\nInstruções interpretadas:\n";
     mostrarInstrucoes(instr);
-
-    bool valido = verificarCadeia(cadeia, instr, true);
-    std::cout << "\nResultado: " << (valido ? "CADEIA ACEITA ✅" : "CADEIA REJEITADA ❌") << "\n";
-
+    int escolha = -1;
+    cout << "Deseja verificar o debugging? 1 - SIM || 0 - NAO -> ";
+    cin >> escolha;
+    while(escolha != 0 && escolha != 1) {
+        cout << "Opcao incorreta! Digite novamente: " << endl;
+        cin >> escolha; 
+    }
+    if(escolha == 1) {
+        bool valido = verificarCadeia(cadeia, instr, true);
+        cout << "\nResultado: " << (valido ? "CADEIA ACEITA!" : "CADEIA REJEITADA!") << "\n";       
+    } else {
+        bool valido = verificarCadeia(cadeia, instr, false);
+        cout << "\nResultado: " << (valido ? "CADEIA ACEITA!" : "CADEIA REJEITADA!") << "\n";  
+    }
     return 0;
 }
